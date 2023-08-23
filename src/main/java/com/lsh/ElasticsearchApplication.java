@@ -14,6 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ElasticsearchApplication {
     public static void main(String[] args) {
         SpringApplication.run(ElasticsearchApplication.class,args);
-        log.info(" Elasticsearch Demo StartUp!");
+        log.info("Elasticsearch Demo StartUp!");
     }
 }

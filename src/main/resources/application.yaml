@@ -2,4 +2,10 @@ server:
   port: 8080
 spring:
   application:
-    name: elasticsearch-demo
+      name: elasticsearch-demo
+elasticsearch:
+  hostname: localhost
+  port: 9200
+  username: elastic
+  password: n6ahTGrZ4JBLTN3ntj9T
+  fingerprint: 5a1300b9d988ac9840f02a2e074384046c792249d869e36005aa7b00f7d742db

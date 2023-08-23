@@ -8,12 +8,10 @@ import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.TransportUtils;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,7 +69,7 @@ public class ElasticsearchJavaClient {
         ElasticsearchClient client = new ElasticsearchClient(transport);
 
         if (client.exists(b -> b.index("products").id("foo")).value()) {
-            log.info("product exists");
+            log.info("product exists 1");
         }
 
 
@@ -83,7 +81,7 @@ public class ElasticsearchJavaClient {
                     if (exception != null) {
                         log.error("Failed to index", exception);
                     } else {
-                        log.info("Product exists");
+                        log.info("Product exists 2");
                     }
                 });
     }
