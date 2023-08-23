@@ -1,5 +1,6 @@
 package com.lsh.config;
 
+import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
@@ -32,10 +33,17 @@ public class ElasticsearchJavaClientConfig  {
 
 
     @Bean
-    public ElasticsearchClient elasticsearchClient(ElasticsearchTransport elasticsearchTransport) throws IOException {
+    public ElasticsearchClient elasticsearchClient(ElasticsearchTransport elasticsearchTransport){
         ElasticsearchClient client = new ElasticsearchClient(elasticsearchTransport);
         log.info("ElasticsearchClient init success.");
         return client;
+    }
+
+    @Bean
+    public ElasticsearchAsyncClient elasticsearchAsyncClient(ElasticsearchTransport elasticsearchTransport){
+        ElasticsearchAsyncClient esAsyncClient = new ElasticsearchAsyncClient(elasticsearchTransport);
+        log.info("ElasticsearchAsyncClient init success.");
+        return esAsyncClient;
     }
 
     @Bean
