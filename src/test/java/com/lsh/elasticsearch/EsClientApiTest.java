@@ -13,7 +13,6 @@ import co.elastic.clients.elasticsearch.core.search.TotalHitsRelation;
 import co.elastic.clients.elasticsearch.indices.Alias;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.lsh.model.Product;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -24,13 +23,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+
+/**
+ * https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/usage.html
+ */
 @Slf4j
 @SpringBootTest
 public class EsClientApiTest {
 
-    /**
-     *
-     */
 
     @Autowired
     ElasticsearchClient client;
@@ -203,10 +203,9 @@ public class EsClientApiTest {
 
     @Test
     void deleteIndex() throws IOException {
-        BooleanResponse before = client.exists(e -> e.index("products"));
-        System.out.println(before);
-        client.indices().delete(d ->d.index("products"));
-        BooleanResponse after = client.exists(e -> e.index("products"));
-        System.out.println(after);
+
     }
+
+
+
 }
