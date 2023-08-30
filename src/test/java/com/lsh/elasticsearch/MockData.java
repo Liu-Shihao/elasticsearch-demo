@@ -6,20 +6,59 @@ import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lsh.model.FAQ;
 import com.lsh.model.Product;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
 @Slf4j
 @SpringBootTest
 public class MockData {
     @Autowired
     ElasticsearchClient esClient;
+
+    @Test
+    void  mockFaqData() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader br = new BufferedReader(new FileReader("/Users/liushihao/Data/IdeaProjects/elasticsearch-demo/data/faq.json"));
+        String line;
+        while ((line = br.readLine()) != null){
+            sb.append(line);
+        }
+        System.out.println(sb);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        FAQ[] faqs = objectMapper.readValue(sb.toString(), FAQ[].class);
+
+        BulkRequest.Builder builder = new BulkRequest.Builder();
+        for (FAQ faq : faqs) {
+            builder.operations(op -> op
+                    .index(idx -> idx
+                            .index("faq")
+                            .id(faq.getId())
+                            .document(faq)
+                    )
+            );
+        }
+        BulkResponse result = esClient.bulk(builder.build());
+        if (result.errors()) {
+            log.error("Bulk had errors");
+            for (BulkResponseItem item: result.items()) {
+                if (item.error() != null) {
+                    log.error(item.error().reason());
+                }
+            }
+        }
+    }
 
     @Test
     void deleteIndex() throws IOException {
