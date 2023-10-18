@@ -90,6 +90,55 @@
 
 
 # 聚合搜索
+使用聚合分析统计出每个用户每个FAQ点击的次数，返回最高的5个FAQ
+如果您的索引中没有一个名为 `click_count` 的字段，而是每个FAQ的点击记录都以文档的形式存在，您需要使用聚合来统计每个用户对每个FAQ的点击次数并返回最高的5个FAQ。这需要以下步骤：
 
+假设您的索引包括以下字段：
+- `user_id`：用户的唯一标识符。
+- `faq_id`：FAQ的唯一标识符。
+- `click_timestamp`：点击时间戳。
 
+以下是一个示例的查询和聚合操作：
 
+```json
+{
+  "size": 0,
+  "aggs": {
+    "user_faq_clicks": {
+      "composite": {
+        "sources": [
+          { "user_id": { "terms": { "field": "user_id" } } },
+          { "faq_id": { "terms": { "field": "faq_id" } } }
+        ]
+      },
+      "aggs": {
+        "click_count": {
+          "value_count": {
+            "field": "click_timestamp"
+          }
+        }
+      }
+    },
+    "top_faq_hits": {
+      "bucket_sort": {
+        "sort": [{ "click_count": { "order": "desc" } }],
+        "size": 5
+      }
+    }
+  }
+}
+```
+
+这个查询执行以下操作：
+
+1. 使用 `composite` 聚合来分组用户和FAQ，以便统计每个用户对每个FAQ的点击次数。
+
+2. 在 `composite` 聚合内，使用 `terms` 聚合分别对 `user_id` 和 `faq_id` 进行分组。
+
+3. 在 `composite` 聚合外，使用 `value_count` 聚合计算每个用户对每个FAQ的点击次数。这是通过统计 `click_timestamp` 的数量来完成的。
+
+4. 最后，使用 `bucket_sort` 聚合对结果进行排序，以获取每个FAQ的点击次数，按点击次数降序排列，然后获取前5个FAQ。
+
+查询将返回最高的5个FAQ的点击次数统计，包括FAQ ID和点击次数。您可以分析这些结果以了解用户对FAQ的点击情况。
+
+请确保适当地替换字段名和其他参数以适应您的实际数据模型和需求。
