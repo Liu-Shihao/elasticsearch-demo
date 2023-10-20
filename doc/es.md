@@ -317,3 +317,97 @@ sourceBuilder.aggregation(
 在这个查询中，我们首先使用 `filter` 聚合来过滤特定的 `soeId`，然后在过滤后的结果上使用 `cardinality` 聚合来统计不同 `contentId` 的数量。
 
 请将 `"your_soeId_here"` 替换为您要统计的 `soeId` 的实际值。执行该查询后，您将获得该 `soeId` 下不同 `contentId` 的数量。
+在 Elasticsearch 7.2 版本的 Java High-Level REST Client 中，您可以使用以下代码来实现查询指定 `soeId` 下不同 `contentId` 的数量：
+
+```java
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.cardinality.CardinalityAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.Cardinality;
+
+// 创建一个 RestHighLevelClient 对象，确保已经正确配置连接到 Elasticsearch
+RestHighLevelClient client = new RestHighLevelClient(...);
+
+// 设置需要查询的 soeId 值
+String soeIdValue = "your_soeId_here";
+
+// 创建搜索请求
+SearchRequest searchRequest = new SearchRequest("your_index_name"); // 替换为您的索引名称
+
+SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+
+// 创建过滤聚合，以过滤特定 soeId
+FilterAggregationBuilder soeIdFilterAgg = AggregationBuilders.filter("soeId_filter", 
+        QueryBuilders.termQuery("soeId", soeIdValue));
+
+// 在过滤聚合中创建基数聚合，以统计不同 contentId 的数量
+CardinalityAggregationBuilder distinctContentIdCountAgg = AggregationBuilders.cardinality("distinct_contentId_count")
+        .field("contentId");
+
+// 将基数聚合添加到过滤聚合中
+soeIdFilterAgg.subAggregation(distinctContentIdCountAgg);
+
+// 将过滤聚合添加到搜索请求中
+sourceBuilder.aggregation(soeIdFilterAgg);
+
+searchRequest.source(sourceBuilder);
+
+try {
+    // 执行查询
+    SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+
+    // 获取基数聚合的结果
+    Cardinality distinctContentIdCountAggResult = searchResponse.getAggregations().get("soeId_filter")
+            .getAggregations().get("distinct_contentId_count");
+
+    // 获取不同 contentId 的数量
+    long distinctContentIdCount = distinctContentIdCountAggResult.getValue();
+    
+    // 打印结果
+    System.out.println("Distinct contentId count for soeId " + soeIdValue + ": " + distinctContentIdCount);
+
+} catch (IOException e) {
+    e.printStackTrace();
+} finally {
+    // 关闭客户端连接
+    try {
+        client.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+请注意替换代码中的以下部分：
+- `"your_soeId_here"`：指定要查询的 `soeId` 值。
+- `"your_index_name"`：指定您的索引名称。
+
+上述代码使用 Java High-Level REST Client 在 Elasticsearch 7.2 版本中执行所需的查询和聚合操作。它将统计指定 `soeId` 下不同 `contentId` 的数量。
+
+如果您想要按照每个 `contentId` 的文档数量（即聚合查询后 `contentId` 的 `doc_count`）进行降序排序，您可以使用以下 Elasticsearch 查询 DSL：
+
+```json
+{
+  "size": 0,
+  "aggs": {
+    "group_by_contentId": {
+      "terms": {
+        "field": "contentId",
+        "size": 10, // 设置合适的分组大小
+        "order": {
+          "doc_count": "desc" // 使用 "doc_count" 字段进行降序排序
+        }
+      }
+    }
+  }
+}
+```
+
+在上述查询中，我们在 `terms` 聚合中使用 `"order"` 参数，将排序规则设置为 `"doc_count"` 字段进行降序排序，即按照每个 `contentId` 的文档数量进行排序。
+
+执行该查询后，您将获得按照每个 `contentId` 的文档数量降序排序的结果。这将显示具有最多文档的 `contentId` 在前面，依此类推。同样，您可以根据需要调整 `size` 参数来限制返回的结果数量。
