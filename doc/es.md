@@ -195,3 +195,125 @@ public class UserFaqClicksAggregation {
 ```
 
 请注意，上述示例代码仅展示了如何构建查询和聚合，您需要根据实际情况来处理搜索响应和聚合结果。确保您已正确配置Elasticsearch的客户端连接，并替换示例中的索引名称、文档类型以及字段名称以适应您的数据模型。
+
+
+在Elasticsearch 7.x 版本中，`AggregationBuilders` 类中的 `valueCount` 方法已被弃用，它通常用于统计某个字段的非空值的数量。相反，您可以使用 `Cardinality Aggregation` 来执行类似的操作。以下是如何使用 `Cardinality Aggregation` 来统计某个字段的非重复值数量：
+
+```java
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregation;
+
+// ...
+
+sourceBuilder.aggregation(
+    AggregationBuilders.composite("user_faq_clicks")
+        .sources(
+            AggregationBuilders.terms("user_id").field("user_id"),
+            AggregationBuilders.terms("faq_id").field("faq_id")
+        )
+        .subAggregation(
+            AggregationBuilders.cardinality("click_count").field("click_timestamp")
+        )
+);
+
+// Execute the search query and process the results
+```
+
+抱歉，我之前的回答有误。您是正确的，`AggregationBuilders.composite` 方法需要两个参数，而不是一个。第一个参数是聚合的名称，第二个参数是 `Sources`，用于指定要组合的字段。
+
+以下是正确的示例：
+
+```java
+sourceBuilder.aggregation(
+    AggregationBuilders.composite("user_faq_clicks", Arrays.asList(
+        AggregationBuilders.terms("user_id").field("user_id"),
+        AggregationBuilders.terms("faq_id").field("faq_id")
+    ))
+    .subAggregation(
+        AggregationBuilders.cardinality("click_count").field("click_timestamp")
+    )
+);
+```
+
+在这个示例中，我们将 `terms` 聚合包装在 `AggregationBuilders.composite` 方法中，并提供了正确的参数列表，以指定 `user_id` 和 `faq_id` 作为要组合的字段。然后，我们使用 `subAggregation` 方法添加 `cardinality` 聚合，用于计算 `click_timestamp` 字段的唯一值数量。
+
+再次感谢您的指正，如果您有任何其他问题，请随时提问。
+
+非常抱歉，我之前的回答依然不准确，您是对的。`AggregationBuilders.composite` 方法的第二个参数应该是 `List<CompositeValuesSourceBuilder>` 类型。这个参数是用来指定要组合的字段的。以下是正确的示例：
+
+```java
+import org.elasticsearch.search.aggregations.CompositeValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregationBuilder;
+
+// ...
+
+sourceBuilder.aggregation(
+    AggregationBuilders.composite("user_faq_clicks", Arrays.asList(
+        new CompositeValuesSourceBuilder(AggregationBuilders.terms("user_id").field("user_id")),
+        new CompositeValuesSourceBuilder(AggregationBuilders.terms("faq_id").field("faq_id"))
+    ))
+    .subAggregation(
+        AggregationBuilders.cardinality("click_count").field("click_timestamp")
+    )
+);
+```
+
+在这个示例中，我们使用 `CompositeValuesSourceBuilder` 来指定要组合的字段，其中包括 `user_id` 和 `faq_id`。然后，我们在 `composite` 聚合下添加 `cardinality` 聚合来计算 `click_timestamp` 字段的唯一值数量。
+
+非常感谢您的耐心和纠正，如果您有任何其他问题，请随时提问。
+## cardinality & count
+在上面的代码中，我们使用 `AggregationBuilders.cardinality` 来创建 `Cardinality Aggregation`，并将其添加到 `CompositeAggregation` 中。这允许您统计 `click_timestamp` 字段的非重复值数量，即点击次数。
+
+请注意，具体的API调用可能会根据您的代码和需求而有所不同，所以请根据您的数据模型和查询需求进行适当的调整。确保您的 Elasticsearch 客户端库版本与 Elasticsearch 服务器版本兼容。
+
+`cardinality` 是 Elasticsearch 中的一种聚合（Aggregation），用于计算某个字段的唯一值的数量。它与 `count` 聚合有不同的用途：
+
+- `count` 聚合用于计算某个字段的值的总数量，包括重复的值。它不考虑唯一性，只计算文档中字段的值出现的次数。
+
+- `cardinality` 聚合用于计算某个字段的唯一值的数量。它不考虑重复的值，只计算字段中的不同值的数量。这在需要知道某个字段的唯一值数量时非常有用，例如统计不同用户的数量或不同产品的数量等。
+
+所以，它们的用途是不同的，根据您的需求选择合适的聚合。如果您需要统计某个字段中唯一值的数量，使用 `cardinality` 聚合。如果您需要统计某个字段中所有值的总数量，使用 `count` 聚合。
+
+在 `AggregationBuilders` 中，通常使用 `AggregationBuilders.cardinality` 方法来创建 `cardinality` 聚合，使用 `AggregationBuilders.count` 方法来创建 `count` 聚合。这些方法允许您构建不同类型的聚合以满足您的需求。
+
+
+
+# types
+在早期版本的Elasticsearch（5.x以前），Elasticsearch索引可以包含多个类型。每个类型类似于关系型数据库中的表，可以存储不同结构的文档。但是，自Elasticsearch 6.0版本开始，多类型的概念已被废弃，索引只能包含一个单一的文档类型。这个变化是为了简化数据模型并提高性能。
+
+在Elasticsearch 6.0及更新版本中，多类型已不再支持，索引只包含一个类型，通常称为"_doc"。因此，当您创建新的索引时，只会有一个默认的文档类型"_doc"，您可以将所有的文档存储在该类型中。
+
+旧版本中，类型在索引创建过程中用于定义文档的映射和结构。现在，文档的结构由字段映射定义，而不再需要单独的类型定义。
+
+要在新版本的Elasticsearch中使用，请忽略类型的概念，只需将文档存储在索引中，不必关心类型。字段映射和索引设置将更多地定义文档的结构和行为。
+
+
+# 统计某个soeId的contentId 数量
+如果您希望统计某个特定 `soeId` 的不同 `contentId` 的数量，您可以使用 `filter` 聚合来实现。以下是一个示例 Elasticsearch 查询 DSL，用于统计指定 `soeId` 下的不同 `contentId` 的数量：
+
+```json
+{
+  "size": 0,
+  "aggs": {
+    "soeId_filter": {
+      "filter": {
+        "term": {
+          "soeId": "your_soeId_here"
+        }
+      },
+      "aggs": {
+        "distinct_contentId_count": {
+          "cardinality": {
+            "field": "contentId"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+在这个查询中，我们首先使用 `filter` 聚合来过滤特定的 `soeId`，然后在过滤后的结果上使用 `cardinality` 聚合来统计不同 `contentId` 的数量。
+
+请将 `"your_soeId_here"` 替换为您要统计的 `soeId` 的实际值。执行该查询后，您将获得该 `soeId` 下不同 `contentId` 的数量。
