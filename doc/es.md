@@ -142,3 +142,56 @@
 查询将返回最高的5个FAQ的点击次数统计，包括FAQ ID和点击次数。您可以分析这些结果以了解用户对FAQ的点击情况。
 
 请确保适当地替换字段名和其他参数以适应您的实际数据模型和需求。
+要使用Elasticsearch Java High-Level REST Client来执行上面的搜索，您需要构建一个相应的Java代码。以下是一个示例代码，假设您已经配置了Elasticsearch的客户端连接：
+
+```java
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregation;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+
+public class UserFaqClicksAggregation {
+    public void getUserTopFaqClicks(RestHighLevelClient client, String userId) throws IOException {
+        SearchRequest searchRequest = new SearchRequest("your_index_name");
+        searchRequest.types("your_document_type");  // 如果使用的Elasticsearch版本较新，可能无需指定文档类型
+
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+
+        // 构建查询
+        sourceBuilder.query(QueryBuilders.termQuery("user_id", userId));
+
+        // 构建聚合操作
+        sourceBuilder.aggregation(
+            AggregationBuilders.composite("user_faq_clicks")
+                .sources(
+                    AggregationBuilders.terms("user_id").field("user_id"),
+                    AggregationBuilders.terms("faq_id").field("faq_id")
+                )
+                .subAggregation(
+                    AggregationBuilders.valueCount("click_count").field("click_timestamp")
+                )
+        );
+
+        sourceBuilder.aggregation(
+            AggregationBuilders.bucketSort("top_faq_hits")
+                .sort(AggregationBuilders.field("click_count").order(BucketOrder.desc))
+                .size(5)
+        );
+
+        searchRequest.source(sourceBuilder);
+        searchRequest.scroll(TimeValue.timeValueMinutes(1));  // 设置滚动时间
+
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+
+        // 处理搜索结果和聚合
+        // 这里可以解析并处理返回的搜索结果和聚合结果
+    }
+}
+```
+
+请注意，上述示例代码仅展示了如何构建查询和聚合，您需要根据实际情况来处理搜索响应和聚合结果。确保您已正确配置Elasticsearch的客户端连接，并替换示例中的索引名称、文档类型以及字段名称以适应您的数据模型。
